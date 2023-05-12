@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:app2/Screens/ShopScreens/BillScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:http/http.dart'as http;
 import '../../Utils/Transition.dart';
 import '../../Widgets/text.dart';
 import 'CreateOrder.dart';
@@ -11,7 +15,11 @@ import 'DisplaySingleProductInfo.dart';
 class EnterQuantitiesForSelectedProducts extends StatefulWidget {
   final String shopName;
   final List<productDetails> list;
-  const EnterQuantitiesForSelectedProducts({Key? key, required this.list, required this.shopName}) : super(key: key);
+  final String clientVat;
+  final String brandCurrency;
+  final String clientCurrency;
+  final Map<String, dynamic> currencyRates;
+  const EnterQuantitiesForSelectedProducts({Key? key, required this.list, required this.shopName, required this.clientVat, required this.brandCurrency, required this.clientCurrency, required this.currencyRates}) : super(key: key);
 
   @override
   State<EnterQuantitiesForSelectedProducts> createState() => _EnterQuantitiesForSelectedProductsState();
@@ -19,8 +27,35 @@ class EnterQuantitiesForSelectedProducts extends StatefulWidget {
 
 class _EnterQuantitiesForSelectedProductsState extends State<EnterQuantitiesForSelectedProducts> {
     List<TextEditingController> l=[];
-
     List<int> quantities=[];
+    
+
+
+
+    bool isLoading=true;
+    convert({required double amount}) {
+
+      final double fromCurrencyRate =
+      widget.currencyRates[widget.brandCurrency].toDouble();
+      final double toCurrencyRate =
+      widget.currencyRates[widget.clientCurrency].toDouble();
+      final double convertedAmount =
+          (amount / fromCurrencyRate) * toCurrencyRate;
+      final String message =
+          "${convertedAmount.toStringAsFixed(2)}" + " "+ widget.clientCurrency;
+      // ${amount.toStringAsFixed(2)} $brandCurrency =
+      return message;
+    }
+    // @override
+    // void initState() {
+    //
+    //   // TODO: implement initState
+    //   super.initState();
+    //
+    //   print(convert(amount: 21));
+    // }
+
+    //to here
   @override
   Widget build(BuildContext context) {
     double w=MediaQuery.of(context).size.width;
@@ -49,7 +84,7 @@ class _EnterQuantitiesForSelectedProductsState extends State<EnterQuantitiesForS
                 child: Container(
 
                   width: w,
-                  height: h*0.1,
+                  padding: EdgeInsets.symmetric(vertical: h*0.005),
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
                       color:  Colors.white
@@ -59,25 +94,63 @@ class _EnterQuantitiesForSelectedProductsState extends State<EnterQuantitiesForS
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                text("Name ", Colors.grey[800]!, FontWeight.bold, h*0.018),
-                                text("Price ", Colors.grey[800]!, FontWeight.normal, h*0.018),
-                              ],
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                text(": "+widget.list[index].productName, Colors.grey[800]!, FontWeight.bold, h*0.018),
-                                text(": "+widget.list[index].productPrice, Colors.grey[800]!, FontWeight.normal, h*0.018),
-                              ],
-                            ),
-                          ],
+                        Container(
+                          width: w*0.46,
+                          child: Row(
+                            children: [
+                         
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                    Container(
+                                      width: w * 0.46 - (h * 0.0165) * 2 - 16, 
+                                      child:      RichText(
+                                        text: TextSpan(
+                                          text: "Name : ",
+                                          style: TextStyle(
+                                              color: Colors.grey[800]!,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: h*0.0165
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: widget.list[index].productName,
+                                              style: TextStyle(
+                                                color: Colors.grey[800]!,
+                                                fontWeight: FontWeight.normal,
+                                                fontSize: h*0.0165,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                        maxLines: 3,
+                                      ),
+                                    ),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: "Price : ",
+                                      style: TextStyle(
+                                        color: Colors.grey[800]!,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: h * 0.0165,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: convert(amount: double.parse(widget.list[index].productPrice)),
+                                          style: TextStyle(
+                                            color: Colors.grey[800]!,
+                                            fontWeight: FontWeight.normal,
+                                            fontSize: h * 0.0165,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),                                ],
+                              ),
+                            ],
+                          ),
                         ),
                         Row(
                           children: [
@@ -99,7 +172,7 @@ class _EnterQuantitiesForSelectedProductsState extends State<EnterQuantitiesForS
                             ),
                             IconButton(onPressed: (){
                               l[index].text=(int.parse(l[index].text)+1).toString();
-                            }, icon:Icon(Icons.add,color: Colors.red,)),
+                            }, icon:Icon(Icons.add,color: Colors.green,)),
 
                           ],
                         )
@@ -132,7 +205,7 @@ class _EnterQuantitiesForSelectedProductsState extends State<EnterQuantitiesForS
                                   quantities.add(int.parse(i.text.toString()));
                                 }
 
-                               navigateWithTransition(context, BillScreen(list:widget.list, quantities: quantities, shopName: widget.shopName, ), TransitionType.slideRightToLeft);
+                               navigateWithTransition(context, BillScreen(clientVat:widget.clientVat,list:widget.list, quantities: quantities, shopName: widget.shopName, currencyRates: widget.currencyRates, brandCurrency: widget.brandCurrency, clientCurrency: widget.clientCurrency, ), TransitionType.slideRightToLeft);
 
                           }, child:text('Generate Bill',Colors.white!, FontWeight.bold,h*0.017)),
             ),

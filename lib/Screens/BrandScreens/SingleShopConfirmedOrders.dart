@@ -17,14 +17,22 @@ class SingleShopConfirmedOrders extends StatefulWidget {
 }
 
 class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
-  int totalAmount=0;
+  double totalAmount=0;
+  double ClientVat=0.0;
+  bool isOrdering=true;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getClientVat();
+  }
   List<productDetails> products=[];
   late Map<String, dynamic> orderMap;
   @override
   Widget build(BuildContext context) {
     double w=MediaQuery.of(context).size.width;
     double h=MediaQuery.of(context).size.height;
-    return Scaffold(
+    return isOrdering?Center(child: CircularProgressIndicator(),):Scaffold(
       // drawer: drawer(h,w,context,widget.brandUid),
         backgroundColor: Colors.white,
         appBar:AppBar(
@@ -72,12 +80,24 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
               rows.add(    TableRow(
                   children:[
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('Sku', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
+                    ,
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('Image', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
+                    ,
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: text('Item', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
                     ,
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
-                      child: text('Price', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                      child: text('Unit', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
+                    ,
+                    TableCell(verticalAlignment: TableCellVerticalAlignment.middle,child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('Packaging', Colors.green[900]!, FontWeight.bold,h*0.018),),)
+                    ,
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: text('Qt', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('Price', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
 
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: text('Total', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
@@ -87,14 +107,51 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
               ),
               );
 
-              int total=0;
+              double total=0;
               for (var i = 0; i < orders.length; i++) {
                 var e = orders[i];
-                int x=orderMap["products"][i.toString()]["quantity"];
-                total+=int.parse(e.productPrice.toString())*x;
+                int x = int.parse(orderMap["products"][i.toString()]["quantity"].toString());
+                total+=double.parse(e.productPrice.toString())*x;
                 rows.add(
                   TableRow(
                     children: [
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(h*0.01),
+                          child: text(e.productSku, Colors.green[700]!, FontWeight.normal,h*0.015),
+                        ),
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                      ),
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(h*0.01),
+                          child:    Container(
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(200),
+                                border: Border.all(color: Colors.green[800]!,width: 2)
+                            ),
+                            width: h*0.05,
+                            height: h*0.05,
+                            child: GestureDetector(
+                              onTap: (){
+                                navigateWithTransition(context,ZoomableImageScreen(imageUrl: e.productImageUrl),TransitionType.scale);
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(200),
+                                child: FancyShimmerImage(
+
+                                  imageUrl:e.productImageUrl!=""?e.productImageUrl: "https://media.istockphoto.com/id/1206800961/photo/online-shopping-and-payment-man-using-tablet-with-shopping-cart-icon-digital-marketing.jpg?b=1&s=170667a&w=0&k=20&c=RT5aV_p3DgMk16-QH26DmzNj_uHaq7hkKR0UapnHL2I=",
+                                  boxDecoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(200),
+                                  ),
+                                  errorWidget: Icon(Icons.error,color: Colors.grey[400],size: h*0.06,),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                      ),
                       TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(h*0.01),
@@ -105,7 +162,14 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
                       TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(h*0.01),
-                          child: text(e.productPrice.toString(), Colors.green[700]!, FontWeight.normal,h*0.0165),
+                          child: text(e.productUnit.toString(), Colors.green[700]!, FontWeight.normal,h*0.0165),
+                        ),
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                      ),
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(h*0.01),
+                          child: text(e.productPackiging.toString(), Colors.green[700]!, FontWeight.normal,h*0.0165),
                         ),
                         verticalAlignment: TableCellVerticalAlignment.middle,
                       ),
@@ -116,11 +180,19 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
                         ),
                         verticalAlignment: TableCellVerticalAlignment.middle,
                       ),
+                      TableCell(
+                        child: Padding(
+                          padding: EdgeInsets.all(h*0.01),
+                          child: text(e.productPrice.toString(), Colors.green[700]!, FontWeight.normal,h*0.0165),
+                        ),
+                        verticalAlignment: TableCellVerticalAlignment.middle,
+                      ),
+
 
                       TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(h*0.01),
-                          child: text((int.parse(e.productPrice.toString())*x).toString(), Colors.green[700]!, FontWeight.normal,h*0.0165),
+                          child: text((double.parse(e.productPrice.toString())*x).toStringAsFixed(2), Colors.green[700]!, FontWeight.normal,h*0.0165),
                         ),
                         verticalAlignment: TableCellVerticalAlignment.middle,
                       ),
@@ -166,6 +238,7 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
                                         text(products[i].productPackiging, Colors.green[700]!, FontWeight.normal,h*0.0165),
                                       ],
                                     ),
+
                                     Divider(),
 
                                     Row(
@@ -173,9 +246,23 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
                                         text('Barcode : ', Colors.green[900]!, FontWeight.bold,h*0.018),
                                         text(products[i].productBarcode, Colors.green[700]!, FontWeight.normal,h*0.0165),
                                       ],
+                                    ),Divider(),
+
+                                    Row(
+                                      children: [
+                                        text('Item : ', Colors.green[900]!, FontWeight.bold,h*0.018),
+                                        text(products[i].productName, Colors.green[700]!, FontWeight.normal,h*0.0165),
+                                      ],
                                     ),
                                     Divider(),
 
+                                    Row(
+                                      children: [
+                                        text('Price : ', Colors.green[900]!, FontWeight.bold,h*0.018),
+                                        text(products[i].productPrice, Colors.green[700]!, FontWeight.normal,h*0.0165),
+                                      ],
+                                    ),
+Divider(),
                                     Row(
                                       children: [
                                         text('Unit : ', Colors.green[900]!, FontWeight.bold,h*0.018),
@@ -197,18 +284,28 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
                   ),
                 );
               }
-
+              double totalWithVat=0;
+              double  clientVatPercentage=ClientVat/100;
+              totalWithVat=total+total*clientVatPercentage;
               rows.add(    TableRow(
                   children:[
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
-                      child: text('', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
-                    , TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: text('', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                    TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text('Vat', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,)
+                    , TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
+                      child: text(ClientVat.toString() + " %", Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
 
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: text('Total', Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
-                      child: text(total.toString(), Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
+                      child: text(totalWithVat.toStringAsFixed(2), Colors.green[900]!, FontWeight.bold,h*0.018),),verticalAlignment: TableCellVerticalAlignment.middle,),
                     TableCell(child: Padding(padding: EdgeInsets.all(h*0.01),
                       child: Container(),),verticalAlignment: TableCellVerticalAlignment.middle,),
                   ]
@@ -216,15 +313,21 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
               );
               return Padding(
                 padding:  EdgeInsets.symmetric(horizontal: w*0.012,vertical: 4),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Table(
+                child: Container(
+                  width: w,
+                  height: h,
+                  alignment: Alignment.center,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Table(
+                        defaultColumnWidth: IntrinsicColumnWidth(),
                         border: TableBorder.all(color: Colors.green[800]!,borderRadius: BorderRadius.circular(12),width: 1.1),
                         children: rows,
+
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );
@@ -232,50 +335,28 @@ class _SingleShopConfirmedOrdersState extends State<SingleShopConfirmedOrders> {
             },
           ),
         ),
-          // Align(
-          //   alignment: Alignment.bottomCenter,
-          //   child: Padding(
-          //     padding:  EdgeInsets.symmetric(horizontal: w*0.1),
-          //
-          //     child: Row(
-          //       mainAxisAlignment: MainAxisAlignment.center,
-          //       children: [
-          //         Container(
-          //             margin: EdgeInsets.only(bottom: h*0.02),
-          //             child:
-          //             OutlinedButton(
-          //                 style: OutlinedButton.styleFrom(
-          //                     side: BorderSide(color: Colors.green[800]!,width: 1.5),
-          //                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),),
-          //                     minimumSize: Size(w*0.3,h*0.045),
-          //                     backgroundColor: Colors.green[800]!
-          //                 ),
-          //                 onPressed: ()
-          //                 {
-          //
-          //                   // navigateWithTransition(context, EnterQuantitiesForSelectedProductsForSHOP(list: products,clientUid:widget.clientUid,brandUid:widget.brandUid), TransitionType.slideRightToLeft);
-          //                   // ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Center(child: text('No product(s) selected!',Colors.red, FontWeight.w600, h*0.016)),
-          //                   //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),side: BorderSide(color: Colors.red,width: 1.2)),margin: EdgeInsets.symmetric(horizontal: w*0.05,vertical: h*0.01)
-          //                   //   ,padding: EdgeInsets.all(h*0.005),
-          //                   //   duration: const Duration(seconds: 5),
-          //                   //   showCloseIcon: true,
-          //                   //   closeIconColor: Colors.red,
-          //                   //   behavior: SnackBarBehavior.floating,
-          //                   //   dismissDirection: DismissDirection.vertical,
-          //                   //   elevation: 4,
-          //                   //   backgroundColor: Colors.white,));
-          //
-          //                 }, child:text('Edit',Colors.white!, FontWeight.bold,h*0.017))
-          //         ),
-          //
-          //       ],
-          //     ),
-          //
-          //   ),
-          // ),
 
         ])
     );
   }
 
+  getClientVat()async{
+    try{
+
+      DocumentSnapshot snap= await FirebaseFirestore.instance.collection('Clients').doc(widget.clientUid).get();
+      ClientVat=double.parse(snap["Vat"]);
+      setState(() {
+        isOrdering=false;
+      });
+
+    }
+    catch(e){
+      setState(() {
+        isOrdering=false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
 }
+
+

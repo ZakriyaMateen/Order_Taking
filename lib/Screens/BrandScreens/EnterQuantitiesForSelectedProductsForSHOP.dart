@@ -10,8 +10,9 @@ import 'BillRegenerated.dart';
 class EnterQuantitiesForSelectedProductsForSHOP extends StatefulWidget {
   final String brandUid,clientUid;
   final List<productDetails> list;
+  final List<String> quantities;
   final String shopName;
-  const EnterQuantitiesForSelectedProductsForSHOP({Key? key, required this.brandUid, required this.clientUid, required this.list, required this.shopName}) : super(key: key);
+  const EnterQuantitiesForSelectedProductsForSHOP({Key? key, required this.brandUid, required this.clientUid, required this.list, required this.shopName, required this.quantities}) : super(key: key);
 
   @override
   State<EnterQuantitiesForSelectedProductsForSHOP> createState() => _EnterQuantitiesForSelectedProductsForSHOPState();
@@ -38,7 +39,7 @@ class _EnterQuantitiesForSelectedProductsForSHOPState extends State<EnterQuantit
           Align(
             alignment: Alignment.topCenter,
             child: ListView.builder(itemBuilder: (context,index){
-              l.add(TextEditingController(text: '1'));
+              l.add(TextEditingController(text: widget.quantities[index]));
               return Padding(
                 padding:  EdgeInsets.symmetric(horizontal:w*0.05,vertical: h*0.005),
 
@@ -49,7 +50,7 @@ class _EnterQuantitiesForSelectedProductsForSHOPState extends State<EnterQuantit
                   child: Container(
 
                     width: w,
-                    height: h*0.1,
+                    padding: EdgeInsets.symmetric(vertical: h*0.005),
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(15),
                         color:  Colors.white
@@ -59,25 +60,62 @@ class _EnterQuantitiesForSelectedProductsForSHOPState extends State<EnterQuantit
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  text("Name ", Colors.grey[800]!, FontWeight.bold, h*0.018),
-                                  text("Price ", Colors.grey[800]!, FontWeight.normal, h*0.018),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  text(": "+widget.list[index].productName, Colors.grey[800]!, FontWeight.bold, h*0.018),
-                                  text(": "+widget.list[index].productPrice, Colors.grey[800]!, FontWeight.normal, h*0.018),
-                                ],
-                              ),
-                            ],
+                          Container(
+                            width: w*0.46,
+                            child: Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    Container(
+                                      width: w * 0.46 - (h * 0.0165) * 2 - 16, // subtract the space for the colon, padding and the size of the quantity row
+                                      child:      RichText(
+                                        text: TextSpan(
+                                          text: "Name : ",
+                                          style: TextStyle(
+                                              color: Colors.grey[800]!,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: h*0.0165
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: widget.list[index].productName,
+                                              style: TextStyle(
+                                                color: Colors.grey[800]!,
+                                                fontWeight: FontWeight.normal,
+                                                fontSize: h*0.0165,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        overflow: TextOverflow.clip,
+                                        maxLines: 3,
+                                      ),
+                                    ),
+                                    RichText(
+                                      text: TextSpan(
+                                        text: "Price : ",
+                                        style: TextStyle(
+                                          color: Colors.grey[800]!,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: h * 0.0165,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: widget.list[index].productPrice,
+                                            style: TextStyle(
+                                              color: Colors.grey[800]!,
+                                              fontWeight: FontWeight.normal,
+                                              fontSize: h * 0.0165,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),                                ],
+                                ),
+                              ],
+                            ),
                           ),
                           Row(
                             children: [
@@ -99,7 +137,7 @@ class _EnterQuantitiesForSelectedProductsForSHOPState extends State<EnterQuantit
                               ),
                               IconButton(onPressed: (){
                                 l[index].text=(int.parse(l[index].text)+1).toString();
-                              }, icon:Icon(Icons.add,color: Colors.red,)),
+                              }, icon:Icon(Icons.add,color: Colors.green,)),
 
                             ],
                           )

@@ -82,6 +82,7 @@ class _BrandHomePageState extends State<BrandHomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    getBrandInfo();
     requestPermission(context: context);
     getToken();
     initInfo();

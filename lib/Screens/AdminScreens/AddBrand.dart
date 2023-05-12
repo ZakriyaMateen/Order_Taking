@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:app2/Model/firebaseAuth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
@@ -11,7 +12,9 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 
+import '../../Providers/RangeProviderForBrand.dart';
 import '../../Widgets/text.dart';
 
 class AddBrand extends StatefulWidget {
@@ -264,133 +267,183 @@ class _AddBrandState extends State<AddBrand> {
                   },
                 ),
                 SizedBox(height: h*0.018),
-                TextFormField(
-                  style: GoogleFonts.lato(
-                    textStyle: TextStyle(color: Colors.grey[800], letterSpacing: .5,fontWeight: FontWeight.normal,fontSize: h*0.017),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  controller: vatController,
-                  decoration: InputDecoration(
-                    label: text('Vat', Colors.grey[800]!,FontWeight.normal, h*0.017),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20)
+                // TextFormField(
+                //   style: GoogleFonts.lato(
+                //     textStyle: TextStyle(color: Colors.grey[800], letterSpacing: .5,fontWeight: FontWeight.normal,fontSize: h*0.017),
+                //   ),
+                //   keyboardType: TextInputType.emailAddress,
+                //   controller: vatController,
+                //   decoration: InputDecoration(
+                //     label: text('Vat', Colors.grey[800]!,FontWeight.normal, h*0.017),
+                //     border: OutlineInputBorder(
+                //         borderRadius: BorderRadius.circular(20)
+                //     ),
+                //     enabledBorder:  OutlineInputBorder(
+                //         borderSide: BorderSide(color: Colors.green,width: 1),
+                //         borderRadius: BorderRadius.circular(20)),
+                //     focusedBorder:   OutlineInputBorder(
+                //         borderSide: BorderSide(color: Colors.green,width: 1.5),
+                //         borderRadius: BorderRadius.circular(20)),
+                //     prefixIcon: Icon(Icons.local_activity,color: Colors.green,),
+                //   ),
+                //   validator: (value) {
+                //     if (value!.length<1) {
+                //       return 'Please enter your vat';
+                //     }
+                //     return null;
+                //   },
+                // ),
+                Row(
+                  children: [
+                    text('VAT', Colors.green, FontWeight.normal, h*0.016),
+                    SizedBox(width: w*0.03,),
+                    Consumer<MySliderModel>(
+                      builder: (context, model, child) => Slider(
+                        value: model.value,
+                        min: 0,
+                        max: 100,
+                        divisions: 100,
+                        label: model.value.round().toString(),
+                        onChanged: (value) {
+                          model.updateValue(value);
+                        },
+                        activeColor: Colors.green,
+                        secondaryActiveColor: Colors.green[700]!,
+                      ),
                     ),
-                    enabledBorder:  OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.green,width: 1),
-                        borderRadius: BorderRadius.circular(20)),
-                    focusedBorder:   OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.green,width: 1.5),
-                        borderRadius: BorderRadius.circular(20)),
-                    prefixIcon: Icon(Icons.local_activity,color: Colors.green,),
-                  ),
-                  validator: (value) {
-                    if (value!.length<2) {
-                      return 'Please enter your vat';
-                    }
-                    return null;
-                  },
+                  ],
                 ),
                 SizedBox(height: h*0.018),
 
                 SizedBox(height: h*0.05),
 
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                      minimumSize: Size(w,h*0.045),
-                      side: BorderSide(color: Colors.green[800]!),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)
-                      )
-                  ),
-                  child: text("Save", Colors.green, FontWeight.bold, h*0.018),
+                Consumer<MySliderModel>(
+                    builder: (context, model, child) {
 
-                  onPressed: isButtonPressed?(){}:()async {
-                                    if (_formKey.currentState!.validate()) {
-                                    _formKey.currentState!.save();
-                        if(_imageFile!=null){
-                          setState(() {
-                            isLoading=true;
-                            isButtonPressed=true;
-                          });
-                                  if(await _uploadImage()){
+                      return
+
+                        OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                                minimumSize: Size(w, h * 0.045),
+                                side: BorderSide(color: Colors.green[800]!),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20)
+                                )
+                            ),
+                            child: text("Save", Colors.green, FontWeight.bold,
+                                h * 0.018),
+
+                            onPressed: isButtonPressed ? () {} : () async {
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
+                                if (_imageFile != null) {
+                                  setState(() {
+                                    isLoading = true;
+                                    isButtonPressed = true;
+                                  });
+                                  if (await _uploadImage()) {
                                     setState(() {
-                                      isLoading=true;
-                                      isButtonPressed=true;
+                                      isLoading = true;
+                                      isButtonPressed = true;
                                     });
-                                  String email=emailController.text.toString();
-                                  String password=passwordController.text.toString();
-                                  String vat=vatController.text.toString();
-                                  String address=addressController.text.toString();
-                                  String name=nameController.text.toString();
-                                  String contact=contactController.text.toString();
-                                  try{
-                                  //Admin Uid
-                                  User? user=FirebaseAuth.instance.currentUser;
-                                  String adminUid=user!.uid;
-                                  String brandUid='';
-                                  //Admin email, password
-                                  await getAdminData(uid:adminUid);
+                                    String email = emailController.text
+                                        .toString();
+                                    String password = passwordController.text
+                                        .toString();
+                                    String vat=model.value.toStringAsFixed(2);
+                                    // String vat = vatController.text.toString();
+                                    String address = addressController.text
+                                        .toString();
+                                    String name = nameController.text
+                                        .toString();
+                                    String contact = contactController.text
+                                        .toString();
+                                    try {
 
-                                  await FirebaseAuth.instance.createUserWithEmailAndPassword(email: email, password: password).then((value) async{
-                                  //Brand uid
-                                  brandUid=FirebaseAuth.instance.currentUser!.uid;
-                                  //Admin>BrandUid>Brands>BrandUid>fields
-                                  //Admin>AdminUid>Brands>BrandUid>fields
-                                  await FirebaseFirestore.instance.collection("Admin").doc(adminUid).collection('Brands').doc(brandUid).set({
-                                  'Email':email,
-                                  'Password':password,
-                                  'Vat':vat,
-                                  'Address':address,
-                                  'Name':name,
-                                  'Contact':contact,
-                                  'BrandUid':brandUid,
-                                  "Logo":_imageUrl
-                                  });
-                                  }).then((value)async {
-                                  await FirebaseFirestore.instance.collection(brandUid).doc(brandUid).collection("BrandInfo").doc(brandUid).set({
-                                  'Email':email,
-                                  'Password':password,
-                                  'Vat':vat,
-                                  'Address':address,
-                                  'Name':name,
-                                  'Contact':contact,
-                                  'BrandUid':brandUid,
-                                  "Logo":_imageUrl
-                                  }).then((value) async{
+                                      User? user = FirebaseAuth.instance
+                                          .currentUser;
+                                      String adminUid = user!.uid;
+                                      String brandUid = '';
+                                      //Admin email, password
+                                      await getAdminData(uid: adminUid);
 
-                                  await FirebaseFirestore.instance.collection('Brands').doc(brandUid).set(
-                                  {'BrandUid':brandUid,
-                                  'Email':email,
-                                  'Password':password});
-                                  await FirebaseAuth.instance.signInWithEmailAndPassword(email: adminEmail, password: adminPassword);
-                                  }).then((value) {
-                                  Navigator.of(context).pop();
-                                  });
-                                  });
-
+                                      await FirebaseAuth.instance
+                                          .createUserWithEmailAndPassword(
+                                          email: email, password: password)
+                                          .then((value) async {
+                                        //Brand uid
+                                        brandUid =
+                                            FirebaseAuth.instance.currentUser!
+                                                .uid;
+                                        //Admin>BrandUid>Brands>BrandUid>fields
+                                        //Admin>AdminUid>Brands>BrandUid>fields
+                                        await FirebaseFirestore.instance
+                                            .collection("Admin").doc(adminUid)
+                                            .collection('Brands').doc(brandUid)
+                                            .set({
+                                          'Email': email,
+                                          'Password': password,
+                                          'Vat': vat,
+                                          'Address': address,
+                                          'Name': name,
+                                          'Contact': contact,
+                                          'BrandUid': brandUid,
+                                          "Logo": _imageUrl
+                                        });
+                                      }).then((value) async {
+                                        await FirebaseFirestore.instance
+                                            .collection(brandUid).doc(brandUid)
+                                            .collection("BrandInfo").doc(
+                                            brandUid).set({
+                                          'Email': email,
+                                          'Password': password,
+                                          'Vat': vat,
+                                          'Address': address,
+                                          'Name': name,
+                                          'Contact': contact,
+                                          'BrandUid': brandUid,
+                                          "Logo": _imageUrl
+                                        })
+                                            .then((value) async {
+                                          await FirebaseFirestore.instance
+                                              .collection('Brands').doc(
+                                              brandUid).set(
+                                              {'BrandUid': brandUid,
+                                                'Email': email,
+                                                'Password': password});
+                                          await FirebaseAuth.instance
+                                              .signInWithEmailAndPassword(
+                                              email: adminEmail,
+                                              password: adminPassword);
+                                        }).then((value) {
+                                          Navigator.of(context).pop();
+                                        });
+                                      });
+                                    }
+                                    catch (e) {
+                                      Fluttertoast.showToast(msg: e.toString());
+                                      setState(() {
+                                        isLoading = false;
+                                        isButtonPressed = false;
+                                      });
+                                    }
                                   }
-                                  catch(e){
-                                  Fluttertoast.showToast(msg: e.toString());
-                                  setState(() {
-                                  isLoading=false;
-                                  isButtonPressed=false;
-                                  });
+                                  else {
+                                    Fluttertoast.showToast(
+                                        msg: " Please choose a logo!");
                                   }
-                                  }
-                                  else{
-                                  Fluttertoast.showToast(msg: " Please choose a logo!");
-                                  }
-
-                                  }
-                                  else{
-                                  setState(() {
-                                  isLoading=false;
-                                  isButtonPressed=false;
-                                  });
-                                  }
-    }
-                  }
-                ),
+                                }
+                                else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: text(
+                                          'Please choose a brand Logo first!',
+                                          Colors.white, FontWeight.normal,
+                                          h * 0.016)));
+                                }
+                              }
+                            }
+                        );
+                    } ),
                 //add logo
               ],
             ),

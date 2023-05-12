@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart'as http;
 import 'package:app2/Screens/ShopScreens/DisplaySingleProductInfo.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,12 @@ import 'EnterQuantitiesForSelectedProducts.dart';
 class CreateOrder extends StatefulWidget {
   final String shopName;
   final String clientUid;
-  const CreateOrder({Key? key, required this.clientUid, required this.shopName}) : super(key: key);
+  final String clientVat;
+  final Map<String, dynamic> currencyRates;
+  final String brandCurrency;
+  final String clientCurrency;
+
+  const CreateOrder({Key? key, required this.clientUid, required this.shopName, required this.clientVat, required this.currencyRates, required this.brandCurrency, required this.clientCurrency}) : super(key: key);
 
   @override
   State<CreateOrder> createState() => _CreateOrderState();
@@ -34,15 +41,71 @@ class productDetails{
   });
 }
 
+
 class _CreateOrderState extends State<CreateOrder> {
+  // Future<Map<String, dynamic>> getLiveCurrencyRates() async {
+  //   final String url = "https://api.exchangerate-api.com/v4/latest/USD";
+  //
+  //   final response = await http.get(Uri.parse(url));
+  //
+  //   if (response.statusCode == 200) {
+  //     return json.decode(response.body);
+  //   } else {
+  //     throw Exception("Failed to get live currency rates.");
+  //   }
+  // }
+  //
+  // late Map<String, dynamic> _currencyRates;
+  // List<String> getCurrencyCodes() {
+  //   if (_currencyRates != null) {
+  //     return _currencyRates.keys.toList();
+  //   } else {
+  //     return [];
+  //   }
+  // }
+  //
+  //  String clientCurrency="AED";
+  //   String brandCurrency="AED";
+  //   bool isLoading=true;
+  // getCurrencies()async{
+  //   try{
+  //     DocumentSnapshot snapshot=  await FirebaseFirestore.instance.collection('Clients').doc(widget.clientUid).get();
+  //     clientCurrency=snapshot['ClientCurrency'];
+  //     brandCurrency=snapshot['BrandCurrency'];
+  //     setState(() {
+  //       isLoading=false;
+  //     });
+  //
+  //   }
+  //   catch(e){
+  //     setState(() {
+  //       isLoading=false;
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+  //   }
+  // }
+convert({required double amount}) {
+
+    final double fromCurrencyRate =
+    widget.currencyRates[widget.brandCurrency].toDouble();
+    final double toCurrencyRate =
+    widget.currencyRates[widget.clientCurrency].toDouble();
+    final double convertedAmount =
+        (amount / fromCurrencyRate) * toCurrencyRate;
+    final String message =
+        "${convertedAmount.toStringAsFixed(2)} ";
+
+    // ${amount.toStringAsFixed(2)} $brandCurrency =
+    return message;
+}
+
+
   List<productDetails> list=[];
   Set<int> selectedIndices = {}; // in
   List<productDetails> selectedProducts = [];
-
-// itially no items are selected
-
   @override
   Widget build(BuildContext context) {
+
     double w=MediaQuery.of(context).size.width;
     double h=MediaQuery.of(context).size.height;
     return Scaffold(
@@ -54,13 +117,11 @@ class _CreateOrderState extends State<CreateOrder> {
           title: text('Select Products',Colors.white, FontWeight.bold, h*0.018)
       ),
 
-    body: Stack(
+    body:  Stack(
       children: [
         Align(
           alignment: Alignment.topCenter,
-            child:
-
-          StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
+            child: StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
               stream: FirebaseFirestore.instance.collection(widget.clientUid).snapshots(),
               builder: (context,snapshot){
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -75,7 +136,6 @@ class _CreateOrderState extends State<CreateOrder> {
                 return ListView.builder(
                 itemBuilder: (context,index) {
                 final data = docs[index].data();
-
                 return Padding(
                 padding:  EdgeInsets.symmetric(horizontal:w*0.05,vertical: h*0.005),
                 child: InkWell(
@@ -117,8 +177,9 @@ class _CreateOrderState extends State<CreateOrder> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
-                                  text(": "+data['productName'], Colors.grey[800]!, FontWeight.bold, h*0.018),
-                                  text(": "+data['productPrice'], Colors.grey[800]!, FontWeight.normal, h*0.018),
+                                  text(": "+data['productName'], Colors.grey[800]!, FontWeight.bold, h*0.0164),
+                                  text(": "+convert(amount: double.parse(data['productPrice']))
+                                      , Colors.grey[800]!, FontWeight.normal, h*0.0164),
                                 ],
                               ),
                             ],
@@ -172,7 +233,7 @@ class _CreateOrderState extends State<CreateOrder> {
                     {
                       productList.selectedIndices.length>0?
 
-                      navigateWithTransition(context, EnterQuantitiesForSelectedProducts(list: productList.list, shopName: widget.shopName,), TransitionType.slideRightToLeft):
+                      navigateWithTransition(context, EnterQuantitiesForSelectedProducts(clientVat: widget.clientVat,list: productList.list, shopName: widget.shopName, brandCurrency:widget. brandCurrency, clientCurrency:widget. clientCurrency, currencyRates: widget.currencyRates,), TransitionType.slideRightToLeft):
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Center(child: text('No product(s) selected!',Colors.red, FontWeight.w600, h*0.016)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20),side: BorderSide(color: Colors.red,width: 1.2)),margin: EdgeInsets.symmetric(horizontal: w*0.05,vertical: h*0.01)
                         ,padding: EdgeInsets.all(h*0.005),
